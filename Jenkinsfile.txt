@@ -1,0 +1,83 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        // Build the code using Maven
+        sh 'mvn clean package'
+      }
+    }
+
+    stage('Unit and Integration Tests') {
+      steps {
+        // Run unit tests
+        sh 'mvn test'
+
+        // Run integration tests
+        sh 'mvn integration-test'
+      }
+      post {
+        success {
+          // Send email notification on test success
+          emailext body: 'Unit and Integration Tests have passed.', subject: 'Tests Passed', to: 'your-jassup076@gmail.com'
+        }
+        failure {
+          // Send email notification on test failure and attach logs
+          emailext body: 'Unit and Integration Tests have failed.', subject: 'Tests Failed', to: 'your-jassup076@gmail.com', attachLog: true
+        }
+      }
+    }
+
+    stage('Code Analysis') {
+      steps {
+        // Analyze the code with a tool 
+        sh 'sonar-scanner'
+      }
+    }
+
+    stage('Security Scan') {
+      steps {
+        // Use a security scanning program 
+        sh 'zap-scanner scan'
+      }
+      post {
+        success {
+          // Send an email notification when the security scan has been successful
+          emailext body: 'Security Scan has passed.', subject: 'Security Scan Passed', to: 'your-jassup076@gmail.com'
+        }
+        failure {
+          // Send an email notification when the security scan has been failed
+          emailext body: 'Security Scan has failed.', subject: 'Security Scan Failed', to: 'your-jassup076@gmail.com', attachLog: true
+        }
+      }
+    }
+
+    stage('Deploy to Staging') {
+      steps {
+        // Staging the application is the next step 
+        sh 'aws ec2 deploy'
+      }
+    }
+
+    stage('Integration Tests on Staging') {
+      steps {
+        // Staging environment integration tests
+        sh 'selenium run'
+      }
+    }
+
+    stage('Deploy to Production') {
+      steps {
+        // Deploy the application to a production server 
+        sh 'aws ec2 deploy'
+      }
+    }
+  }
+
+  post {
+    always {
+      // Attach logs to the email
+      emailext attachLog: true, body: '', subject: "${currentBuild.result}: Pipeline Execution Status", to: 'your-jassup076@gmail.com'
+    }
+  }
+}
